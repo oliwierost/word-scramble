@@ -1,6 +1,5 @@
 import { Button, Card, Typography } from "@mui/material";
 import { Stack } from "@mui/system";
-import { cpSync } from "fs";
 import { useEffect, useState } from "react";
 
 export const WordScramble = () => {
@@ -10,7 +9,6 @@ export const WordScramble = () => {
   const [droppedLetters, setDroppedLetters] = useState([]);
   const [showWord, setShowWord] = useState(false);
 
-  // make a list of words in polish of length 4-8
   const words = [
     "serce",
     "butelka",
@@ -34,7 +32,6 @@ export const WordScramble = () => {
     "kurtka",
   ];
 
-  // pick a random word and scramble it
   const pickAndScrambleWord = () => {
     const randomIndex = Math.floor(Math.random() * words.length);
     const randomWord = words[randomIndex];
@@ -45,7 +42,7 @@ export const WordScramble = () => {
     }
     setWord(randomWord);
     setScrambledWord(scrambled.join(""));
-    setLetters(scrambled);
+    setLetters(() => scrambled.map((letter, index) => ({ letter, index })));
     setDroppedLetters([]);
   };
 
@@ -53,41 +50,52 @@ export const WordScramble = () => {
     pickAndScrambleWord();
   }, []);
 
-  // event handler for dropping a letter onto a slot
   const handleDrop = (e, slotIndex) => {
     e.preventDefault();
-    const droppedLetter = e.dataTransfer.getData("text");
+    const droppedLetter = JSON.parse(e.dataTransfer.getData("text/plain"));
     setDroppedLetters((prev) => {
       const newState = [...prev];
+      if (newState[slotIndex]) {
+        const removedLetter = newState[slotIndex];
+        newState[removedLetter.index] = null;
+        setLetters((prev) => {
+          const newState = [...prev];
+          newState[removedLetter.index] = removedLetter;
+          return newState;
+        });
+      }
       newState[slotIndex] = droppedLetter;
       return newState;
     });
     setLetters((prev) => {
       const newState = [...prev];
-      const index = newState.indexOf(droppedLetter);
-      if (index > -1) {
-        newState.splice(index, 1);
-      }
+      newState[droppedLetter.index] = null;
       return newState;
     });
   };
 
-  // event handler for dragging a letter
   const handleDragStart = (e, index) => {
-    e.dataTransfer.setData("text/plain", letters[index]);
+    e.dataTransfer.setData("text/plain", JSON.stringify(letters[index]));
     e.dataTransfer.effectAllowed = "move";
   };
 
   const handleSlotClick = (index) => {
+    if (!droppedLetters[index]) return;
     setDroppedLetters((prev) => {
       const newState = [...prev];
       const removedLetter = newState[index];
       newState[index] = null;
-      setLetters((prev) => [...prev, removedLetter]);
+      setLetters((prev) => {
+        const newState = [...prev];
+        newState[removedLetter.index] = removedLetter;
+        return newState;
+      });
       return newState;
     });
   };
 
+  console.log("droppedLetters", droppedLetters);
+  console.log("letters", letters);
   // render the letter slots
   const renderSlots = () => {
     return scrambledWord.split("").map((_, index) => (
@@ -99,8 +107,12 @@ export const WordScramble = () => {
         onClick={() => handleSlotClick(index)}
       >
         <Stack justifyContent="center" alignItems="center" height="100%">
-          <Typography textAlign="center" variant="h4">
-            {droppedLetters[index] || ""}
+          <Typography
+            textAlign="center"
+            variant="h4"
+            sx={{ userSelect: "none" }}
+          >
+            {droppedLetters[index] ? droppedLetters[index].letter : null}
           </Typography>
         </Stack>
       </Card>
@@ -113,12 +125,16 @@ export const WordScramble = () => {
       <Card
         sx={{ width: "4rem", height: "4rem" }}
         key={index}
-        draggable
+        draggable={!letter ? false : true}
         onDragStart={(e) => handleDragStart(e, index)}
       >
         <Stack justifyContent="center" alignItems="center" height="100%">
-          <Typography textAlign="center" variant="h4">
-            {letter}
+          <Typography
+            textAlign="center"
+            variant="h4"
+            sx={{ userSelect: "none" }}
+          >
+            {letter?.letter ? letter.letter : null}
           </Typography>
         </Stack>
       </Card>
@@ -127,12 +143,12 @@ export const WordScramble = () => {
 
   // check if the word is correctly solved
   const isSolved = () => {
-    const currentWord = droppedLetters.join("");
+    const currentWord = droppedLetters.map((letter) => letter?.letter).join("");
     return currentWord === word;
   };
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={{ userSelect: "none" }}>
       <Stack direction="row" spacing={2}>
         {renderSlots()}
       </Stack>
@@ -144,22 +160,20 @@ export const WordScramble = () => {
           <Typography variant="h4" textAlign="center">
             You solved it!
           </Typography>
-          <Button onClick={() => pickAndScrambleWord()}>
+          <Button onClick={() => pickAndScrambleWord()} variant="contained">
             <Typography variant="h4" textAlign="center">
               Next word
             </Typography>
           </Button>
         </Stack>
       ) : (
-        <Button onClick={() => setShowWord(!showWord)}>
+        <Button onClick={() => setShowWord(!showWord)} variant="contained">
           {showWord ? "Hide word" : "See word"}
         </Button>
       )}
-      {showWord ? (
+      {showWord && !isSolved() ? (
         <Stack justifyContent="center" alignItems="center" height="100%">
-          <Typography textAlign="center" variant="h4">
-            {word.toUpperCase()}
-          </Typography>
+          {word.toUpperCase()}
         </Stack>
       ) : null}
     </Stack>

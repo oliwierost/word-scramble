@@ -1,0 +1,18 @@
+name: "Style-check (prettier)"
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Bun
+        uses: antongolub/action-setup-bun@v1
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Check Code Style
+        run: bun run prettier-check

@@ -130,7 +130,6 @@ export const WordScramble = () => {
     ))
   }
 
-  // render the letter buttons
   const renderLetters = () => {
     return letters.map((letter, index) => (
       <Card

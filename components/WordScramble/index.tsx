@@ -1,4 +1,4 @@
-import { Button, Card, Typography } from "@mui/material"
+import { Box, Button, Card, Typography } from "@mui/material"
 import { Stack } from "@mui/system"
 import { useEffect, useState } from "react"
 
@@ -39,8 +39,13 @@ export const WordScramble = () => {
       pickAndScrambleWord()
       return
     }
-    setWord(randomWord)
-    setLetters(() => scrambled.map((letter, index) => ({ letter, index })))
+    setWord(randomWord.toUpperCase())
+    setLetters(() =>
+      scrambled.map((letter, index) => ({
+        letter: letter.toUpperCase(),
+        index,
+      }))
+    )
     setDroppedLetters(() => Array(scrambled.length).fill(null))
   }
 
@@ -55,7 +60,7 @@ export const WordScramble = () => {
       const newState = [...prev]
       if (newState[slotIndex]) {
         const removedLetter = newState[slotIndex]
-        newState[removedLetter.index] = null
+
         setLetters((prev) => {
           const newState = [...prev]
           newState[removedLetter.index] = removedLetter
@@ -111,7 +116,11 @@ export const WordScramble = () => {
   const renderSlots = () => {
     return letters.map((_, index) => (
       <Card
-        sx={{ width: "4rem", height: "4rem" }}
+        sx={{
+          width: "4rem",
+          height: "4rem",
+          cursor: droppedLetters[index] ? "pointer" : "default",
+        }}
         key={index}
         onDrop={(e) => handleDrop(e, index)}
         onDragOver={(e) => e.preventDefault()}
@@ -133,7 +142,11 @@ export const WordScramble = () => {
   const renderLetters = () => {
     return letters.map((letter, index) => (
       <Card
-        sx={{ width: "4rem", height: "4rem" }}
+        sx={{
+          width: "4rem",
+          height: "4rem",
+          cursor: letters[index] ? "pointer" : "default",
+        }}
         key={index}
         draggable={!letter ? false : true}
         onDragStart={(e) => handleDragStart(e, index)}
@@ -166,19 +179,15 @@ export const WordScramble = () => {
         {renderLetters()}
       </Stack>
       {isSolved() ? (
-        <Stack>
-          <Typography variant="h4" textAlign="center">
-            You solved it!
-          </Typography>
+        <Stack alignItems="center">
+          <Box>Brawo!</Box>
           <Button onClick={() => pickAndScrambleWord()} variant="contained">
-            <Typography variant="h4" textAlign="center">
-              Next word
-            </Typography>
+            Następne słowo
           </Button>
         </Stack>
       ) : (
         <Button onClick={() => setShowWord(!showWord)} variant="contained">
-          {showWord ? "Hide word" : "See word"}
+          {showWord ? "Ukryj słowo" : "Odkryj słowo"}
         </Button>
       )}
       {showWord && !isSolved() ? (
